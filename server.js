@@ -9,183 +9,101 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
+
+// Your permanent private room ID comes from Render
 const PRIVATE_ROOM_ID = process.env.PRIVATE_ROOM_ID;
 
-// Serve frontend
 app.use(express.static("public"));
 
-
-// =====================================
-// ROOM INFORMATION
-// =====================================
-
+// Check the private room ID
 app.get("/room-info", (req, res) => {
-
-    const room =
-        io.sockets.adapter.rooms.get(PRIVATE_ROOM_ID);
-
-    const currentUsers = room ? room.size : 0;
-
     res.json({
-        roomExists: true,
-        maxUsers: 2,
-        currentUsers: currentUsers
+        success: true,
+        roomConfigured: Boolean(PRIVATE_ROOM_ID)
     });
-
 });
-
-
-// =====================================
-// SOCKET.IO
-// =====================================
 
 io.on("connection", (socket) => {
 
     console.log("User connected:", socket.id);
 
+    // User tries to join the private room
+    socket.on("join-room", (enteredRoomId) => {
 
-    // =================================
-    // JOIN PRIVATE ROOM
-    // =================================
+        const roomId = String(enteredRoomId || "").trim();
 
-    socket.on("join-room", (roomId) => {
-
-        console.log(
-            `User ${socket.id} requested room: ${roomId}`
-        );
-
-
-        // Check room ID
-        if (roomId !== PRIVATE_ROOM_ID) {
+        // Check whether the entered ID is correct
+        if (!PRIVATE_ROOM_ID || roomId !== PRIVATE_ROOM_ID) {
 
             socket.emit("room-error", {
-                message: "Invalid private room."
+                message: "Invalid Private Room ID."
             });
 
             return;
         }
 
+        // Check how many people are already inside
+        const room = io.sockets.adapter.rooms.get(PRIVATE_ROOM_ID);
+        const currentUsers = room ? room.size : 0;
 
-        // Prevent joining twice
-        if (socket.rooms.has(PRIVATE_ROOM_ID)) {
-
-            socket.emit("room-error", {
-                message: "You are already inside this room."
-            });
-
-            return;
-        }
-
-
-        // Get current room
-        const room =
-            io.sockets.adapter.rooms.get(PRIVATE_ROOM_ID);
-
-        const currentUsers =
-            room ? room.size : 0;
-
-
-        // Maximum 2 participants
+        // Maximum 2 people
         if (currentUsers >= 2) {
 
-            console.log(
-                `Room full. Rejected user: ${socket.id}`
-            );
-
             socket.emit("room-full", {
-                message:
-                    "This private room already has two participants."
+                message: "This private room is already full."
             });
 
             return;
         }
 
-
-        // Join room
+        // Join the permanent private room
         socket.join(PRIVATE_ROOM_ID);
 
+        socket.data.roomId = PRIVATE_ROOM_ID;
 
-        console.log(
-            `User ${socket.id} joined private room.`
-        );
-
-
-        // Tell joining user
         socket.emit("room-joined", {
-
-            roomId: PRIVATE_ROOM_ID,
-
-            participantCount: currentUsers + 1
-
+            message: "You joined the private room."
         });
 
+        // Tell the other person that someone joined
+        socket.to(PRIVATE_ROOM_ID).emit("participant-joined");
 
-        // Tell existing participant
-        socket.to(PRIVATE_ROOM_ID).emit(
-            "participant-joined",
-            {
-                message:
-                    "The other participant has joined the room."
-            }
+        console.log(
+            `${socket.id} joined the private room`
         );
-
     });
 
 
-    // =================================
-    // SEND MESSAGE
-    // =================================
-
+    // Send chat message
     socket.on("send-message", (message) => {
 
-        // Make sure message is actually text
         if (typeof message !== "string") {
             return;
         }
 
+        const cleanMessage = message.trim();
 
-        // Remove unnecessary spaces
-        const cleanMessage =
-            message.trim();
-
-
-        // Ignore empty messages
-        if (!cleanMessage) {
+        if (!cleanMessage || cleanMessage.length > 1000) {
             return;
         }
 
+        const roomId = socket.data.roomId;
 
-        // Limit message size
-        if (cleanMessage.length > 1000) {
+        // Only allow messages from people
+        // who successfully joined the private room
+        if (!roomId || !socket.rooms.has(roomId)) {
             return;
         }
 
-
-        // Make sure user is inside private room
-        if (!socket.rooms.has(PRIVATE_ROOM_ID)) {
-            return;
-        }
-
-
-        io.to(PRIVATE_ROOM_ID).emit(
-            "receive-message",
-            {
-                message: cleanMessage,
-
-                sender: socket.id,
-
-                timestamp:
-                    new Date().toISOString()
-            }
-        );
-
+        io.to(roomId).emit("receive-message", {
+            message: cleanMessage,
+            sender: socket.id,
+            timestamp: new Date().toISOString()
+        });
     });
 
 
-    // =================================
-    // DISCONNECT
-    // =================================
-
+    // User leaves
     socket.on("disconnect", () => {
 
         console.log(
@@ -198,18 +116,10 @@ io.on("connection", (socket) => {
 });
 
 
-// =====================================
-// START SERVER
-// =====================================
-
 server.listen(PORT, () => {
 
     console.log(
-        `Server running at http://localhost:${PORT}`
-    );
-
-    console.log(
-        `Private room: ${PRIVATE_ROOM_ID}`
+        `Server running on port ${PORT}`
     );
 
 });

@@ -1,87 +1,120 @@
 const socket = io();
 
-const ROOM_ID = "my-private-room-2026";
+const roomSelection = document.getElementById("roomSelection");
+const chatSection = document.getElementById("chatSection");
+
+const roomIdInput = document.getElementById("roomIdInput");
+const joinRoomButton = document.getElementById("joinRoomButton");
+const roomMessage = document.getElementById("roomMessage");
 
 const messages = document.getElementById("messages");
 const messageForm = document.getElementById("messageForm");
 const messageInput = document.getElementById("messageInput");
+
 const statusText = document.getElementById("statusText");
 const statusDot = document.querySelector(".status-dot");
 
 
-/* CONNECT */
+// JOIN PRIVATE ROOM
+joinRoomButton.addEventListener("click", () => {
 
-socket.on("connect", () => {
+    const roomId = roomIdInput.value.trim();
 
-    console.log("Connected to private chat.");
+    if (!roomId) {
+        roomMessage.textContent =
+            "Please enter your Private Room ID.";
+        return;
+    }
 
-    statusText.textContent = "Connected";
+    roomMessage.textContent =
+        "Checking Private Room ID...";
 
-    statusDot.style.background = "#8b5cf6";
+    joinRoomButton.disabled = true;
 
-    statusDot.style.boxShadow =
-        "0 0 12px rgba(139, 92, 246, 0.7)";
-
-    socket.emit("join-room", ROOM_ID);
+    socket.emit("join-room", roomId);
 });
 
 
-/* SUCCESSFULLY JOINED */
+// ENTER KEY SUPPORT
+roomIdInput.addEventListener("keydown", (event) => {
 
-socket.on("room-joined", () => {
-
-    console.log("Joined private room.");
-
-});
-
-
-/* SOMEONE ELSE JOINED */
-
-socket.on("participant-joined", () => {
-
-    console.log("Another participant joined.");
+    if (event.key === "Enter") {
+        event.preventDefault();
+        joinRoomButton.click();
+    }
 
 });
 
 
-/* ROOM FULL */
+// SUCCESSFULLY JOINED
+socket.on("room-joined", (data) => {
 
-socket.on("room-full", (data) => {
+    roomSelection.classList.add("hidden");
 
-    statusText.textContent = "Room full";
+    chatSection.classList.remove("hidden");
 
-    statusDot.style.background = "#ef4444";
+    statusText.textContent =
+        "Private room connected";
 
-    statusDot.style.boxShadow =
-        "0 0 12px rgba(239, 68, 68, 0.6)";
+    statusDot.style.background =
+        "#8b5cf6";
 
-    alert(data.message);
+    messageInput.focus();
 
 });
 
 
-/* INVALID ROOM */
-
+// INVALID ROOM ID
 socket.on("room-error", (data) => {
 
-    console.error(data.message);
+    roomMessage.textContent =
+        data.message;
+
+    joinRoomButton.disabled = false;
+
+    roomIdInput.focus();
+
+    roomIdInput.select();
 
 });
 
 
-/* SEND MESSAGE */
+// ROOM FULL
+socket.on("room-full", (data) => {
 
+    roomMessage.textContent =
+        data.message;
+
+    joinRoomButton.disabled = false;
+
+});
+
+
+// OTHER PERSON JOINED
+socket.on("participant-joined", () => {
+
+    statusText.textContent =
+        "Connected · 2 people";
+
+});
+
+
+// SEND MESSAGE
 messageForm.addEventListener("submit", (event) => {
 
     event.preventDefault();
 
-    const message = messageInput.value.trim();
+    const message =
+        messageInput.value.trim();
 
     if (!message) {
         return;
     }
 
-    socket.emit("send-message", message);
+    socket.emit(
+        "send-message",
+        message
+    );
 
     messageInput.value = "";
 
@@ -90,8 +123,7 @@ messageForm.addEventListener("submit", (event) => {
 });
 
 
-/* RECEIVE MESSAGE */
-
+// RECEIVE MESSAGE
 socket.on("receive-message", (data) => {
 
     addMessage(
@@ -102,14 +134,14 @@ socket.on("receive-message", (data) => {
 });
 
 
-/* ADD MESSAGE TO SCREEN */
-
+// DISPLAY MESSAGE
 function addMessage(message, mine) {
 
-    const welcome = document.querySelector(".welcome-message");
+    const welcomeMessage =
+        document.querySelector(".welcome-message");
 
-    if (welcome) {
-        welcome.remove();
+    if (welcomeMessage) {
+        welcomeMessage.remove();
     }
 
     const messageElement =
@@ -123,24 +155,34 @@ function addMessage(message, mine) {
         messageElement.classList.add("theirs");
     }
 
-    messageElement.textContent = message;
+    messageElement.textContent =
+        message;
 
-    messages.appendChild(messageElement);
+    messages.appendChild(
+        messageElement
+    );
 
-    messages.scrollTop = messages.scrollHeight;
-
+    messages.scrollTop =
+        messages.scrollHeight;
 }
 
 
-/* DISCONNECT */
+// SOCKET CONNECTED
+socket.on("connect", () => {
 
+    statusText.textContent =
+        "Connected";
+
+});
+
+
+// SOCKET DISCONNECTED
 socket.on("disconnect", () => {
 
-    statusText.textContent = "Disconnected";
+    statusText.textContent =
+        "Disconnected";
 
-    statusDot.style.background = "#ef4444";
-
-    statusDot.style.boxShadow =
-        "0 0 12px rgba(239, 68, 68, 0.6)";
+    statusDot.style.background =
+        "#ef4444";
 
 });

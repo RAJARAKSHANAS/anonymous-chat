@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
 
@@ -19,88 +20,145 @@
 
     <main class="chat-container">
 
-        <!-- HEADER -->
+        <!-- PRIVATE ROOM ID SCREEN -->
+        <section id="roomSelection" class="room-selection">
 
-        <header class="chat-header">
-
-            <div class="brand">
-
-                <div class="brand-icon">
-                    ✦
-                </div>
-
-                <div>
-                    <h1>Private Space</h1>
-                    <p> A quiet conversation for two</p>
-                </div>
-
+            <div class="room-icon">
+                ✦
             </div>
 
-            <div class="connection-status">
-                <span class="status-dot"></span>
-                <span id="statusText">Connecting...</span>
-            </div>
+            <h1>Enter Private Room</h1>
 
-        </header>
-
-
-        <!-- CHAT AREA -->
-
-        <section
-            id="messages"
-            class="messages"
-        >
-
-            <div class="welcome-message">
-
-                <div class="welcome-icon">
-                    ✦
-                </div>
-
-                <h2>Your private conversation</h2>
-
-                <p>
-                    This space is shared between two participants.
-                </p>
-
-            </div>
-
-        </section>
-
-
-        <!-- MESSAGE INPUT -->
-
-        <form
-            id="messageForm"
-            class="message-form"
-        >
+            <p>
+                Enter your permanent private room ID
+                to continue.
+            </p>
 
             <input
-                id="messageInput"
+                id="roomIdInput"
                 type="text"
-                placeholder="Write something..."
+                placeholder="Enter Private Room ID"
                 autocomplete="off"
             >
 
             <button
-                type="submit"
-                aria-label="Send message"
+                id="joinRoomButton"
+                class="room-button"
             >
-                →
+                Enter Private Room →
             </button>
 
-        </form>
+            <p
+                id="roomMessage"
+                class="room-message"
+            ></p>
+
+        </section>
+
+
+        <!-- CHAT SCREEN -->
+        <section
+            id="chatSection"
+            class="chat-section hidden"
+        >
+
+            <header class="chat-header">
+
+                <div class="brand">
+
+                    <div class="brand-icon">
+                        ✦
+                    </div>
+
+                    <div>
+
+                        <h1>Private Space</h1>
+
+                        <p>
+                            A quiet conversation for two
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="connection-status">
+
+                    <span class="status-dot"></span>
+
+                    <span id="statusText">
+                        Connecting...
+                    </span>
+
+                </div>
+
+            </header>
+
+
+            <div class="private-room-label">
+
+                🔒 Private Room
+
+            </div>
+
+
+            <!-- MESSAGES -->
+            <section
+                id="messages"
+                class="messages"
+            >
+
+                <div class="welcome-message">
+
+                    <div class="welcome-icon">
+                        ✦
+                    </div>
+
+                    <h2>
+                        Your private conversation
+                    </h2>
+
+                    <p>
+                        You are now inside your
+                        private room.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- MESSAGE INPUT -->
+            <form
+                id="messageForm"
+                class="message-form"
+            >
+
+                <input
+                    id="messageInput"
+                    type="text"
+                    placeholder="Write something..."
+                    autocomplete="off"
+                >
+
+                <button type="submit">
+                    →
+                </button>
+
+            </form>
+
+        </section>
 
     </main>
 
 
-    <!-- Socket.IO client -->
-
+    <!-- SOCKET.IO -->
     <script src="/socket.io/socket.io.js"></script>
 
-    <!-- Chat JavaScript -->
-
+    <!-- YOUR CHAT JAVASCRIPT -->
     <script src="chat.js"></script>
 
 </body>
+
 </html>
